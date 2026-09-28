@@ -28,7 +28,7 @@ from aiogram.types import (
 )
 
 # ================== КОНФИГ ==================
-TOKEN = "8621302583:AAF2ickfLfj5cIdPGZtzFDFKjPoCbQub0OA"
+TOKEN = "8976060540:AAHay5UDL00G832Hivnlf9QRBKhj67bMxZ4"
 BOT_USERNAME = "VIPchatdefferbot"        # VIP-бот
 MAIN_BOT_USERNAME = "badusersbot"        # основной бот (покупка подписки)
 SIGHT_USER = "258849477"
