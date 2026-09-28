@@ -29,8 +29,8 @@ from aiogram.types import (
 
 # ================== КОНФИГ ==================
 TOKEN = "8976060540:AAHay5UDL00G832Hivnlf9QRBKhj67bMxZ4"
-BOT_USERNAME = "VIPChatDefferBot"           # юзернейм VIP-бота
-MAIN_BOT_USERNAME = BadUsersBot"      # основной бот, где покупают подписку
+BOT_USERNAME = "VIPchatdefferbot"        # VIP-бот
+MAIN_BOT_USERNAME = "badusersbot"        # основной бот (покупка подписки)
 SIGHT_USER = "258849477"
 SIGHT_SECRET = "4m8pMUiBfg7vkpUTgYSktsqP7zCi27KH"
 
@@ -588,11 +588,6 @@ def msg_for(kind: str, nick: str, media_word: str) -> str:
 
 # ================== ЛОГИКА ЛОГИНА ==================
 def try_login_code(uid: int, code: str) -> str:
-    """
-    Возвращает:
-    'ok'      — успешный вход
-    'bad'     — неверный или использованный код
-    """
     cur.execute("SELECT * FROM login_codes WHERE code=?", (code,))
     row = cur.fetchone()
     if row is None:
@@ -623,9 +618,7 @@ async def cmd_start(msg: Message, state: FSMContext):
     await state.clear()
     row = ensure_user(msg.from_user)
 
-    # Если владелец — сразу показываем меню
     if is_logged(row):
-        # удаляем старое меню, если есть
         old = row["menu_message_id"]
         if old:
             try:
@@ -642,7 +635,6 @@ async def cmd_start(msg: Message, state: FSMContext):
             pass
         return
 
-    # Если не вошёл — просим код
     sent = await msg.answer(LOGIN_REQUIRED, parse_mode=ParseMode.HTML,
                             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                                 [btn(f"🔑 Получить код в @{MAIN_BOT_USERNAME}",
@@ -655,26 +647,20 @@ async def cmd_start(msg: Message, state: FSMContext):
 @router.message(F.chat.type == ChatType.PRIVATE, Form.waiting_code)
 async def login_input(msg: Message, state: FSMContext):
     text = (msg.text or "").strip()
-
-    # Разрешаем команды — но не код
     if is_any_cmd(text):
         await state.clear()
         return
-
     if not is_login_code(text):
         await msg.answer("❌ Код должен состоять из 11 цифр. Попробуй ещё раз.")
         return
 
-    row = get_user(msg.from_user.id)
     res = try_login_code(msg.from_user.id, text)
-
     if res == "bad":
         await msg.answer(LOGIN_BAD, parse_mode=ParseMode.HTML)
         return
 
     await state.clear()
     row = get_user(msg.from_user.id)
-    # чистим старое меню, если было
     old = row["menu_message_id"]
     if old:
         try:
@@ -683,7 +669,6 @@ async def login_input(msg: Message, state: FSMContext):
             pass
     sent = await msg.answer(LOGIN_SUCCESS, parse_mode=ParseMode.HTML)
     set_u(msg.from_user.id, "menu_message_id", sent.message_id)
-    # затем главное меню
     text2, kb2 = main_text(get_user(msg.from_user.id)), main_kb()
     menu = await msg.answer(text2, reply_markup=kb2, parse_mode=ParseMode.HTML)
     set_u(msg.from_user.id, "menu_message_id", menu.message_id)
@@ -704,7 +689,7 @@ async def cmd_logout(msg: Message, state: FSMContext):
     set_u(msg.from_user.id, "logged_in", 0)
     set_u(msg.from_user.id, "subscription", None)
     set_u(msg.from_user.id, "sub_until", None)
-    await msg.answer(f"🚪 Ты вышел из аккаунта.\nОтправь /start чтобы войти заново.",
+    await msg.answer("🚪 Ты вышел из аккаунта.\nОтправь /start чтобы войти заново.",
                      parse_mode=ParseMode.HTML)
 
 # ---------- /ПС ----------
@@ -1115,7 +1100,6 @@ async def group_filter(msg: Message):
         await del_warn(msg.bot, msg.chat.id, msg, "порно-контент запрещён.")
         return
 
-    # авто-скан фото
     if row["porn"] and msg.photo:
         if msg.media_group_id:
             cnt = ALBUM_CNT[msg.media_group_id]
@@ -1507,7 +1491,7 @@ async def cb_topup(cb: CallbackQuery):
     )
     await cb.answer()
 
-# ---------- ПОДПИСКИ (информационные, покупка в основном боте) ----------
+# ---------- ПОДПИСКИ ----------
 SUB_PRICES = {"comfort": 110, "premium": 199, "german": 350}
 SUB_NAMES = {"comfort": "Комфорт", "premium": "Премиум", "german": "Германец"}
 
@@ -1634,4 +1618,4 @@ async def main():
     await dp.start_polling(bot, drop_pending_updates=True)
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(main())как
